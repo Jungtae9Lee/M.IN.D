@@ -4,10 +4,10 @@ class Man:
         print("Initialized!")
 
     def hello(self):
-        print("Hello" + self.name + "!")
+        print("Hello " + self.name + "!")
 
     def goodby(self):
-        print("Good-bye" + self.name + "!")
+        print("Good-bye " + self.name + "!")
         
 m = Man("David")
 m.hello()
