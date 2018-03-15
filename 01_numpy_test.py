@@ -74,3 +74,18 @@ img = imread('image/roun.png') #이미지 읽어오기
 plt.imshow(img)
 plt.show()
 
+
+
+# 튜플이 매개변수인 함수
+def func_print_tuple(*arg):
+ print( arg )
+
+# 딕션너리가 매개변수인 함수
+def func_print_dict(**arg):
+ print( arg )
+
+#위의 함수들은 다음과 같이 호출할 수 있습니다.
+func_print_tuple( 1, 2, 3 )
+# -> ( 1, 2, 3 )
+func_print_dict( a=1, b=2, c=3 )
+# -> {'a': 1, 'b': 2, 'c': 3}
