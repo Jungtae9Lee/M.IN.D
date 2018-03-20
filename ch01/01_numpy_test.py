@@ -1,16 +1,16 @@
 import numpy as np
-# x = np.array([1.0,2.0, 3.0])
-# y = np.array([2.0,4.0, 6.0])
-# z = x + y # 원소 덧셈
-# print(z)
-# z = x - y
-# print(z)
-# z = x * y
-# print(z)
-# z = x / y
-# print(z)
-# z = x / 2
-# print(z)
+x = np.array([1.0,2.0, 3.0])
+y = np.array([2.0,4.0, 6.0])
+z = x + y # 원소 덧셈
+print(z)
+z = x - y
+print(z)
+z = x * y
+print(z)
+z = x / y
+print(z)
+z = x / 2
+print(z)
 
 # A =  np.array([[1,2], [3,4]])
 # print(A)
