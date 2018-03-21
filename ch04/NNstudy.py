@@ -1,5 +1,6 @@
 import sys, os
 sys.path.append(os.pardir)
+print(os)
 sys.path.append('/Users/bueno/Documents/Deeplearning/')
 import numpy as np
 import matplotlib.pylab as plt
