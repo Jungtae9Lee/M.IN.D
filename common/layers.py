@@ -1,4 +1,8 @@
 # coding: utf-8
+import sys, os
+sys.path.append(os.pardir)
+sys.path.append('/Users/bueno/Documents/Deeplearning/')
+print(sys)
 import numpy as np
 from common.functions import *
 from common.util import im2col, col2im
@@ -7,7 +11,7 @@ from common.util import im2col, col2im
 class Relu:
     def __init__(self):
         self.mask = None
-
+        
     def forward(self, x):
         self.mask = (x <= 0)
         out = x.copy()
@@ -183,7 +187,7 @@ class BatchNormalization:
         dgamma = np.sum(self.xn * dout, axis=0)
         dxn = self.gamma * dout
         dxc = dxn / self.std
-        dstd = -np.sum((dxn * self.xc) / (self.std * self.std), axis=0)
+        dstd = -1*(np.sum((dxn * self.xc) / (self.std * self.std), axis=0))
         dvar = 0.5 * dstd / self.std
         dxc += (2.0 / self.batch_size) * self.xc * dvar
         dmu = np.sum(dxc, axis=0)

@@ -1,7 +1,8 @@
 import sys, os
 sys.path.append(os.pardir)
 print(os)
-sys.path.append('/Users/bueno/Documents/Deeplearning/')
+sys.path.append('c:/Users/bueno/Documents/Deeplearning/')
+print(sys.path)
 import numpy as np
 import matplotlib.pylab as plt
 from dataset.mnist import load_mnist

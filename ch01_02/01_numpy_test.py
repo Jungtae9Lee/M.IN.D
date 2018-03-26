@@ -1,5 +1,5 @@
 import numpy as np
-x = np.array([1.0,2.0, 3.0])
+x = np.array([-1.0,2.0, -3.0])
 y = np.array([2.0,4.0, 6.0])
 z = x + y # 원소 덧셈
 print(z)
@@ -11,6 +11,17 @@ z = x / y
 print(z)
 z = x / 2
 print(z)
+
+# class leejung:
+#     def __init__(self):
+#         self.mask = (x <= 0)
+
+k = np.array([[0,0,0],[10,11,12]])
+print(k + x)
+
+mask = (x<=0)
+print("mask {} ".format(mask))
+
 
 # A =  np.array([[1,2], [3,4]])
 # print(A)
