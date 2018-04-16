@@ -1,235 +1,643 @@
+#-*- coding: utf-8 -*-
 import numpy as np
 import random
+import os
+import matplotlib.pyplot as plt
+from collections import OrderedDict
+from utils import numerical_gradient
 
-class Softmax(object):
-    def __init__(self):
-        #self.Weights = None
-        return
-        
-    def train(self, X_tr_data, Y_tr_data, X_val_data, Y_val_data, lr=1e-3, reg=1e-5, iterations=100, bs=128, verbose=False, weight=0):
-        """
-        Train this Softmax classifier using stochastic gradient descent.
-        
-        Inputs have D dimensions, and we operate on N examples.
-        
-        Inputs :
-            - X_data : A numpy array of shape (N,D) containing training data.
-            - Y_data : A numpy array of shape (N,) containing training labels;
-                  Y[i]=c means that X[i] has label 0<=c<C for C classes.
-            - lr : (float) Learning rate for optimization.
-            - reg : (float) Regularization strength. 
-            - iterations : (integer) Number of steps to take when optimizing. 
-            - bs : (integer) Number of training examples to use at each step.
-            - verbose : (boolean) If true, print progress during optimization.
-        
-        Regurns :
-            - A list containing the value of the loss function at each training iteration.
-        """
-        
-        num_train, dim = X_tr_data.shape
-        num_classes = np.max(Y_tr_data)+1
-        self.Weights = 0.001*np.random.randn(dim, num_classes)
-        
-        if np.shape(weight)!=np.shape(0):
-            self.Weights = weight
-            
-        for it in range(iterations):
-            #X_batch = None
-            #Y_batch = None
-            
-            ####################################################################################################
-            # TODO : Sample batch_size elements from the training data and their corresponding labels          #
-            #        to use in this round of gradient descent.                                                 #
-            #        Store the data in X_batch and their corresponding labels in Y_batch; After sampling       #
-            #        X_batch should have shape (dim, batch_size) and Y_batch should have shape (batch_siae,)   #
-            #                                                                                                  #
-            #        Hint : Use np.random.choice to generate indicies.                                         #
-            #               Sampling with replacement is faster than sampling without replacement.             #
-            #---------------------------------------WRITE YOUR CODE--------------------------------------------#
-            batch_idx = np.random.choice(num_train, bs, replace = True)
-            X_batch =  X_tr_data[batch_idx]
-            Y_batch = Y_tr_data[batch_idx]
-            #--------------------------------------END OF YOUR CODE--------------------------------------------#
-            ####################################################################################################
-
-            # Evaluate loss and gradient
-            loss_history = []
-            tr_loss, tr_grad = self.loss(X_batch, Y_batch, reg)
-            loss_history.append(tr_loss)
-
-            # Perform parameter update
-            ####################################################################################################
-            # TODO : Update the weights using the gradient and the learning rate                               #
-            #---------------------------------------WRITE YOUR CODE--------------------------------------------#
-            self.Weights += - lr * tr_grad
-            #--------------------------------------END OF YOUR CODE--------------------------------------------#
-            ####################################################################################################
-
-            # if verbose and it % num_iters == 0:
-            #     print ('Ieration %d / %d : loss %f ' % (it, num_iters, loss))
-                    
+def softmax(x):
     
-    def predict(self, X_data):
-        """
-        Use the trained weights of this softmax classifier to predict labels for data points.
-        
-        Inputs :
-            - X : A numpy array of shape (N,D) containing training data.
-            
-        Returns :
-             - Y_pred : Predicted labels for the data in X. Y_pred is a 1-dimensional array of length N, 
-                        and each element is an integer giving the predicted class.
-        """
-        Y_pred = np.zeros(X_data.shape[0])
-        
-        ####################################################################################################
-        # TODO : Implement this method. Store the predicted labels in Y_pred                               #
-        #---------------------------------------WRITE YOUR CODE--------------------------------------------#
-        scores = X_data.dot(self.Weights)
-        Y_pred = np.argmax(scores, axis = 1)
-        #--------------------------------------END OF YOUR CODE--------------------------------------------#
-        ####################################################################################################
-        return Y_pred
-    
-    def get_accuracy(self, X_data, Y_data):
-        """
-        Use X_data and Y_data to get an accuracy of the model.
-        
-        Inputs :
-            - X_data : A numpy array of shape (N,D) containing input data.
-            - Y_data : A numpy array of shape (N,) containing a true label.
-            
-        Returns :
-             - Accuracy : Accuracy of input data pair [X_data, Y_data].
-        """
-        accuracy = 0  
-        ####################################################################################################
-        # TODO : Implement this method. Calculate an accuracy of X_data using Y_data and predict Func                               #
-        #---------------------------------------WRITE YOUR CODE--------------------------------------------#
-        z = self.predict(X_data)
-        # z_modify = np.argmax(z, axis=0)
-       
-        accuracy = np.sum(z == Y_data) / float(X_data.shape[0])
-        #--------------------------------------END OF YOUR CODE--------------------------------------------#
-        ####################################################################################################
-        
-        return accuracy
-    
-    def loss(self, X_batch, Y_batch, reg):
-        return vectorized_softmax_loss(self.Weights, X_batch, Y_batch, reg)
-    
-    
-
-
-
-def naive_softmax_loss(Weights,X_data,Y_data,reg):
     """
-     Inputs have D dimension, there are C classes, and we operate on minibatches of N examples.
+    Softmax 함수를 생성하라.
+    NaN가 생성되지 않도록 구현 할 것(오버플로우 방지)
+    Batch size(N)을 고려하여 구현하라
     
-     Inputs :
-         - Weights : A numpy array of shape (D,C) containing weights.
-         - X_data : A numpy array of shape (N,D) contatining a minibatch of data.
-         - Y_data : A numpy array of shape (N,) containing training labels; 
-               Y[i]=c means that X[i] has label c, where 0<=c<C.
-         - reg : Regularization strength. (float)
-         
-     Returns :
-         - loss as single float
-         - gradient with respect to Weights; an array of sample shape as Weights
-     """
+    Inputs : 
+        - x : (N,D) 차원의 벡터
     
-    # Initialize the loss and gradient to zero
-    softmax_loss = 0.0
-    dWeights = np.zeros_like(Weights)
+    Output : 
+        - softmax_output : (N,D) 차원의 Softmax 결과
     
-    ####################################################################################################
-    # TODO : Compute the softmax loss and its gradient using explicit loops.                           # 
-    #        Store the loss in loss and the gradient in dW.                                            #
-    #        If you are not careful here, it is easy to run into numeric instability.                  #
-    #        Don't forget the regularization. ->                                                          #
-    #---------------------------------------WRITE YOUR CODE--------------------------------------------#
     
-    # 모든 원소가 0인 5x5리스트 생성
-    # z_out = [[0]*np.size(X_data,0) for i in range(np.size(Weights,1))]
-    # z_out = [[0]*np.size(Weights,1) for i in range(np.size(X_data,0))]
-    # X[49000*3073] * W[3073*10]
-    #z_out[49000*10]
-    # too slow.. change loop only onetime
-    # for i in range(np.size(X_data,0)): # 0~48999
-    #     if(i % 100 == 0):
-    #         print(i)
-    #     for k in range(np.size(z_out,1)): #0~9
-    #         for j in range(np.size(X_data,1)): #0~3072
-    #             z_out[i][k] += X_data[i][j] * Weights[j][k]
-
-       
-    num_train = X_data.shape[0]
-    num_classes = Weights.shape[1]
-
-    for i in range(num_train):
-        # Compute vector of scores
-        f_i = X_data[i].dot(Weights)
-
-        # Normalization trick to avoid numerical instability
-        f_i -= np.max(f_i)
-
-        # Compute softmax_loss (and add to it, divided later)
-        sum_j = np.sum(np.exp(f_i))
-        marco = lambda k: np.exp(f_i[k]) / sum_j
-        softmax_loss += -np.log(marco(Y_data[i]))
-
-        # Compute gradient
-        # Here we are computing the contribution to the inner sum for a given i.
-        for k in range(num_classes):
-            p_k = marco(k)
-            dWeights[:, k] += (p_k - (k == Y_data[i])) * X_data[i]
-
-    softmax_loss /= num_train
-    softmax_loss += 0.5 * reg * np.sum(Weights * Weights)
-    dWeights /= num_train
-    dWeights += reg*Weights
-    #--------------------------------------END OF YOUR CODE--------------------------------------------#
-    ####################################################################################################
-    return softmax_loss, dWeights
-
-
-
-def vectorized_softmax_loss(Weights, X_data, Y_data, reg):
-    softmax_loss = 0.0
-    dWeights = np.zeros_like(Weights)
-
-    ####################################################################################################
-    # TODO : Compute the softmax loss and its gradient using no explicit loops.                        # 
-    #        Store the loss in loss and the gradient in dW.                                            #
-    #        If you are not careful here, it is easy to run into numeric instability.                  #
-    #        Don't forget the regularization.                                                          #
-    #---------------------------------------WRITE YOUR CODE--------------------------------------------#
-    num_train = X_data.shape[0]
-    f = X_data.dot(Weights)
-    f -= np.max(f, axis=1, keepdims=True) # max of every sample
-    sum_f = np.sum(np.exp(f), axis=1, keepdims=True)
-    p = np.exp(f)/sum_f
-
-    softmax_loss = np.sum(-np.log(p[np.arange(num_train), Y_data]))
-
-    ind = np.zeros_like(p)
-    ind[np.arange(num_train), Y_data] = 1
-    dWeights = X_data.T.dot(p - ind)
-
-    softmax_loss /= num_train
-    softmax_loss += 0.5 * reg * np.sum(Weights * Weights)
-    dWeights /= num_train
-    dWeights += reg*Weights
-    #--------------------------------------END OF YOUR CODE--------------------------------------------#
-    ####################################################################################################
+    Make Softmax function.
+    Be careful not to make NaN.(preventing overflow)
+    Implement considering Batch size(N).
     
-    return softmax_loss, dWeights
+    Inputs : 
+        - x : vector with dimension (N,D)
+    
+    Output : 
+        - softmax_output : Softmax result with dimension (N,D)
+    
+    """
+    
+    softmax_output = None
+    
+    #########################################################################################################
+    #------------------------------------------WRITE YOUR CODE----------------------------------------------#
+    
+    #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+    #########################################################################################################
+    
+    return softmax_output
 
 
 
 
+def cross_entropy_loss(prob, target, weights, regularization):
+    
+    """
+    cross_entropy_loss 함수를 생성하라.
+    delta를 이용하여 log값의 input으로 0이 들어가지 않도록 대처하라
+    Batch size(N)을 고려하여 구현하라.
+    Weights를 이용한 L2 Regularization을 고려하여 구현하라
+    L2 Regularization은 0.5를 곱하여 계산하라 (미분 할 때 계산적 이점)
+    
+    Inputs : 
+        - prob : (N, D) 차원의 벡터
+        - target : (N, D) 차원의 벡터 (One-hot encoding)
+        - weights : N개의 Weight 벡터
+        - regularization : regularization를 결정하는 0과 1사이의 수
+    
+    Output : 
+        - loss : scalar인 loss 값
+    
+    
+    Make cross_entropy_loss function.
+    Let 0 not to be an input to log using delta.
+    Implement considering Batch size(N).
+    Implement considering L2 Regularization using Weights.
+    Calculate L2 Regularization with multiplying 0.5. (advantage when differentiating)
+    
+    Inputs : 
+        - prob : vector with dimension (N, D)
+        - target : vector with dimension (N, D) (One-hot encoding)
+        - weights : N number of Weight vectors
+        - regularization : a number between 0 to 1, which sets regularization
+    
+    Output : 
+        - loss : loss value which is a scalar    
+    """
+    
+    delta = 1e-9
+    batch_size = target.shape[0]
+    data_loss = 0
+    reg_loss = 0
+    loss = None
+    
+    #########################################################################################################
+    #------------------------------------------WRITE YOUR CODE----------------------------------------------#
+    
+    #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+    #########################################################################################################
+    
+    loss = data_loss + reg_loss
+    
+    return loss
+    
 
+    
 
+class OutputLayer:
+    
+    """
+    Softmax를 이용한 Cross-entropy loss를 계산하는 Ouput Layer class를 생성하라.
+    앞서 생성한 softmax() 및 cross_entropy_loss를 이용하여 구현 할 것
+    forward, backward의 계산과정을 생각하여 구현할 것
+    backpropagation에서 softmax의 output과 target label의 정보가 이용됨을 유념하여 구현할 것
+    
+    forward() : 
+        - x : (N,D) 차원의 벡터
+        - y : (N, # of Label) 차원의 벡터 
+        - return : softmax loss
+    
+    backward() : 
+        - dout : backpropagation으로 오는 delta 값, output layer 이므로 delta = 1
+        - return : dx
+    
+    
+    Make Ouput Layer class which calculates Cross-entropy loss, using Softmax.
+    Use Softmax() and cross_entropy_loss, which are previously made.
+    Consider the calculating process of forward, backward.
+    Be careful that output of softmax and target label are used in backpropagation.
+    
+    forward() : 
+        - x : vector with dimension (N,D)
+        - y : vector with dimension (N, # of Label) 
+        - return : softmax loss
+    
+    backward() : 
+        - dout : delta from backpropagation, delta = 1 as it is output layer
+        - return : dx    
+    """
+    
+    def __init__(self, weights, regularization):
+        self.loss = None           # loss value
+        self.output_softmax = None # Output of softmax
+        self.target_label = None   # Target label (one-hot vector)
+        self.weights = weights
+        self.regularization = regularization
+        
+    def forward(self, x, y):
+    
+        #########################################################################################################
+        #------------------------------------------WRITE YOUR CODE----------------------------------------------#
 
+        #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+        #########################################################################################################
+    
+        return self.loss
+    
+    def backward(self, dout=1):
+        
+        bt_size = self.target_label.shape[0]
+        dx = None
+        
+        #########################################################################################################
+        #------------------------------------------WRITE YOUR CODE----------------------------------------------#
+        
+        
+        #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+        #########################################################################################################
+        
+        return dx
+    
+    
+class ReLU:
+    
+    """
+    ReLU를 구현하라
+    forward, backward의 계산과정을 생각하여 구현할 것
+    backpropagation에서 forward 과정에서 사용 된 mask 정보가 사용됨을 유념하여 구현할 것
+    
+    forward() : 
+        - x : (N,D) 차원의 벡터
+        - return : ReLU output
+    
+    backward() : 
+        - dout : backpropagation으로 오는 delta 값
+        - return : dx
+    
+    
+    Implement RELU.
+    Consider the calculating process of forward, backward.
+    Be careful that mask information used in forward process is utilized in backpropagation.
+    
+    forward() : 
+        - x : vector with dimension (N,D)
+        - return : ReLU output
+    
+    backward() : 
+        - dout : delta from backpropagation
+        - return : dx    
+    
+    """
+    
+    def __init__(self):
+        
+        self.mask = None
+        
+    def forward(self, x):
+        
+        self.out = None
+    
+        #########################################################################################################
+        #------------------------------------------WRITE YOUR CODE----------------------------------------------#
 
+        #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+        #########################################################################################################
+    
+        return out
+    
+    def backward(self, dout):
+    
+        dx = None
+        
+        #########################################################################################################
+        #------------------------------------------WRITE YOUR CODE----------------------------------------------#
 
+        #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+        #########################################################################################################
+        
+        return dx
+    
+class Sigmoid:
+    
+    """
+    Sigmoid 구현하라
+    forward, backward의 계산과정을 생각하여 구현할 것
+    backpropagation 과정에서 forward 과정에서 나온 계산 결과가 사용됨을 유념하여 구현할 것
+    
+    forward() : 
+        - x : (N,D) 차원의 벡터
+        - return : Sigmoid output
+    
+    backward() : 
+        - dout : backpropagation으로 오는 delta 값
+        - return : dx
+    
+    
+    Implement Sigmoid.
+    Consider the calculating process of forward, backward.
+    Be careful that the results from forward process is utilized in backpropagation.
+    
+    forward() : 
+        - x : vector with dimension (N,D)
+        - return : Sigmoid output
+    
+    backward() : 
+        - dout : delta from backpropagation
+        - return : dx    
+    
+    """
+    
+    def __init__(self):
+        self.out = None
+        
+    def forward(self, x):
+    
+        #########################################################################################################
+        #------------------------------------------WRITE YOUR CODE----------------------------------------------#
+
+        #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+        #########################################################################################################
+    
+        return out
+    
+    def backward(self, dout):
+        
+        dx = None
+        
+        #########################################################################################################
+        #------------------------------------------WRITE YOUR CODE----------------------------------------------#
+
+        #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+        #########################################################################################################
+        
+        return dx
+    
+    
+    
+class Affine:
+    
+    """
+    Affine 계층을 구현하라
+    Affine 계층이란 Y = np.dot(X, W) + B (X는 입력, W는 가중치, B는 바이어스)와 같은 한 뉴런의 가중치합을 계산하는 것
+    forward, backward의 계산과정을 생각하여 구현할 것
+    Batch size(N)을 고려하여 구현할 것
+    Backward 과정에서 W,b 그리고 x 까지 모두 사용됨을 유의하여 구현할 것
+    
+    forward() : 
+        - x : (N,D) 차원의 벡터
+        - return : Affine output
+    
+    backward() : 
+        - dout : backpropagation의 결과로 오는 delta 값
+        - return : dx
+    
+    
+    Implement Affine layer.
+    Affine layer is calculating one neuron's weighted sum like Y = np.dot(X, W) + B (X: input, W: weight, B: bias)
+    Consider the the calculating process of forward, backward.
+    Consider the Batch size(N).
+    Be careful that W,b, and x are used in Backward.
+    
+    forward() : 
+        - x : vector with dimension (N,D)
+        - return : Affine output
+    
+    backward() : 
+        - dout : delta from backpropagation
+        - return : dx    
+    
+    """
+    
+    def __init__(self, W, b):
+        self.W = W
+        self.b = b
+        self.x = None
+        self.dW = None
+        self.db = None
+        
+    def forward(self, x):
+        
+        out = None
+    
+        #########################################################################################################
+        #------------------------------------------WRITE YOUR CODE----------------------------------------------#
+
+        #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+        #########################################################################################################
+    
+        return out
+    
+    def backward(self, dout):
+        
+        dx = None
+        
+        #########################################################################################################
+        #------------------------------------------WRITE YOUR CODE----------------------------------------------#
+
+        #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+        #########################################################################################################
+        
+        return dx
+    
+    
+    
+    
+from collections import OrderedDict
+class TwoLayerNet:
+    
+    """
+    __init__() : 
+        - Weight 및 bias를 initialization 하는 함수
+        - Initialization 된 Weight와 bias를 이용하여 계층을 생성하는 함수
+    
+    predict() : 
+        - Input data(x)에 대해서 Neural network의 forward propagtion을 수행하는 함수
+        
+    loss() : 
+        - Input data(x)에 대해서 Neural network의 forward propagtion을 수행한 결과를 이용하여 Loss를 계산하는 함수
+        
+    accuracy() :
+        - Input data(x)의 결과와 True label(y)을 이용하여 Accuracy를 구하는 함수
+        
+    numerical_gradient() :
+        - Input data(x)와 True label(y)을 이용하여 Numerical_gradient를 구하는 함수
+        - Backpropagation 방법과의 비교를 위해 사용
+        
+    gradient():
+        - Input data(x)와 True label(y)을 이용하여 Backpropagation을 수행하는 함수
+        
+    
+    
+    __init__() : 
+        - A function initializing Weight and bias
+        - A function making layers with initialized Weight and bias
+        
+    predict() : 
+        - A function performing forward propagation in neural network with input data(x)
+    loss() : 
+        - A function calculating Loss using the results from forward propagation of Neural network with input data(x)
+        
+    accuracy() :
+        - A function obtaining Accuracy using the results from input data(x) and True label(y)
+        
+    numerical_gradient() :
+        - A function obtaining Numerical_gradient using Input data(x) and True label(y)
+        - Utilized to compare with backpropagation
+        
+    gradient():
+        - A function performing Backpropagation using Input data(x) and True label(y)
+    
+    """
+
+    def __init__(self, input_size, hidden_size, output_size, weight_init_std = 0.01, regularization = 0.0):
+
+        # 가중치 초기화
+        # Weight initialization
+        self.params = {}
+        self.params['W1'] = weight_init_std * np.random.randn(input_size, hidden_size)
+        self.params['b1'] = np.zeros(hidden_size)
+        self.params['W2'] = weight_init_std * np.random.randn(hidden_size, output_size) 
+        self.params['b2'] = np.zeros(output_size)
+
+        self.weights = {}
+        self.weights['W1'] = self.params['W1']
+        self.weights['W2'] = self.params['W2']
+        
+        self.reg = regularization
+
+        # 계층 생성
+        # Layer generation
+        self.layers = OrderedDict() # infromation about OrderedDict (https://pymotw.com/2/collections/ordereddict.html)
+        
+        #########################################################################################################
+        # TwoLayerNet을 구현하라                                                                                 
+        # Neural Network의 구조는 다음과 같이 구현할 것                                                           
+        # [ Input => Fully Connected => ReLU => Fully Connected(OutputLayer) ]
+        # 구현시 위 과정에서 생성한 Class(Affine, ReLU)들 및 Weight initialization 과정에서 생성한 weight를 이용하여 구현할 것
+        
+        # Implement TwoLayerNet.
+        # Implement Neural Network structure as follow
+        # [ Input => Fully Connected => ReLU => Fully Connected(OutputLayer) ]
+        # Implement using previously made Class(Affine, ReLU) and weights from Weight initialization
+        #########################################################################################################
+        #------------------------------------------WRITE YOUR CODE----------------------------------------------#
+        # self.layers['Affine1'] = None
+        # self.layers['Relu1'] = None
+        # self.layers['Affine2'] = None
+
+        #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+        #########################################################################################################
+        self.lastLayer = OutputLayer(self.weights, self.reg)
+
+    def predict(self, x):
+
+        for layer in self.layers.values():
+            x = layer.forward(x)
+            
+        return x
+
+    def loss(self, x, y):
+        score = self.predict(x)
+        return self.lastLayer.forward(score, y)
+
+    
+
+    def accuracy(self, x, y):
+
+        score = self.predict(x)
+        score = np.argmax(score, axis=1)
+        if y.ndim != 1 : y = np.argmax(y, axis=1)
+        accuracy = np.sum(score == y) / float(x.shape[0])
+
+        return accuracy
+
+    def numerical_gradient(self, x, y):
+
+        loss_W = lambda W: self.loss(x, y)
+
+        grads = {}
+        grads['W1'] = numerical_gradient(loss_W, self.params['W1'])
+        grads['b1'] = numerical_gradient(loss_W, self.params['b1'])
+        grads['W2'] = numerical_gradient(loss_W, self.params['W2'])
+        grads['b2'] = numerical_gradient(loss_W, self.params['b2'])
+        
+        if self.reg != 0.0:
+                       
+            #########################################################################################################
+            # Gradient를 구할 때 Regularization에 대한 부분을 구현하라
+            # Implement Regularization part when obtaining Gradient
+            #########################################################################################################
+            #------------------------------------------WRITE YOUR CODE----------------------------------------------#
+            
+            pass #erase this when writing your code
+
+            #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+            #########################################################################################################
+            
+        return grads
+
+        
+
+    def gradient(self, x, y):
+
+        # forward
+        self.loss(x, y)
+
+        # backward
+        dout = 1
+        dout = self.lastLayer.backward(dout)
+        layers = list(self.layers.values())
+        layers.reverse()
+
+        for layer in layers:
+            dout = layer.backward(dout)
+
+        grads = {}
+        grads['W1'], grads['b1'] = self.layers['Affine1'].dW, self.layers['Affine1'].db
+        grads['W2'], grads['b2'] = self.layers['Affine2'].dW, self.layers['Affine2'].db
+        
+        if self.reg != 0.0:
+            
+            #########################################################################################################
+            # 각 Weight 및 bias의 Gradient를 구할 때 Regularization에 의한 영향을 구현하라
+            # Implement the impact of Regularization when obtaining each Gradient of Weight and bias.
+            #########################################################################################################
+            #------------------------------------------WRITE YOUR CODE----------------------------------------------#
+            
+            pass #erase this when writing your code
+
+            #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+            #########################################################################################################
+
+        return grads
+    
+    
+    
+    
+    
+class ThreeLayerNet:
+    
+    """
+    __init__() : 
+        - Weight 및 bias를 initialization 하는 함수
+        - Initialization 된 Weight와 bias를 이용하여 계층을 생성하는 함수
+    
+    predict() : 
+        - Input data(x)에 대해서 Neural network의 forward propagtion을 수행하는 함수
+        
+    loss() : 
+        - Input data(x)에 대해서 Neural network의 forward propagtion을 수행한 결과를 이용하여 Loss를 계산하는 함수
+        
+    accuracy() :
+        - Input data(x)의 결과와 True label(y)을 이용하여 Accuracy를 구하는 함수
+        
+    numerical_gradient() :
+        - Input data(x)와 True label(y)을 이용하여 Numerical_gradient를 구하는 함수
+        - Backpropagation 방법과의 비교를 위해 사용
+    gradient():
+        - Input data(x)와 True label(y)을 이용하여 Backpropagation을 수행하는 함수
+        
+    
+    
+    __init__() : 
+        - A function initializing Weight and bias
+        - A function making layers using initialized Weight and bias
+    
+    predict() : 
+        - A function performing forward propagation of Neural network with Input data(x)
+        
+    loss() : 
+        - A function calculating Loss using the results from forward propagation of Neural network with input data(x)
+        
+    accuracy() :
+        - A function obtaining Accuracy using the results from input data(x) and True label(y)
+        
+    numerical_gradient() :
+        - A function obtaining Numerical_gradient using Input data(x) and True label(y)
+        - Utilized to compare with backpropagation
+        
+    gradient():
+        - A function performing Backpropagation using Input data(x) and True label(y)    
+    
+    """
+
+    def __init__(self, input_size, hidden_size1, hidden_size2, output_size, weight_init_std = 0.01, regularization = 0.0):
+
+        
+        #########################################################################################################
+        # TwoLayerNet을 응용하여 ThreeLayerNet 구현하라
+        # Neural Network의 구조는 다음과 같이 구현할 것
+        #[ Input => Fully Connected => ReLU => Fully Connected => ReLU => Fully Connected(OutputLayer) ]
+        #구현시 위 과정에서 생성한 Class를 이용하여 구현할 것
+        #* Hidden Layer가 증가함에 따라 바꿔야하는 요소들(Weight 및 bias 추가, Hidden Layer의 weight 수, Weight update 등)을
+        #충분히 고려하여 구현할 것 *
+        # Hidden Layer의 변수로 hidden_size1, hidden_size2를 사용할 것
+        
+        
+        # Implement ThreeLayerNet applying TwoLayerNet
+        # Implement Neural Network structure as follow:
+        #[ Input => Fully Connected => ReLU => Fully Connected => ReLU => Fully Connected(OutputLayer) ]
+        # Implement using the Class previously made
+        # * Consider the elements to be changed as Hidden Layer increase (e.g. addition of Weight and bias, number of weight in Hidden Layers, 
+        #  Weight update) *
+        # Use hidden_size1 and hidden_size2 as variables of Hidden Layer
+        #########################################################################################################
+        #########################################################################################################
+        #------------------------------------------WRITE YOUR CODE----------------------------------------------#
+        
+        #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+        #########################################################################################################
+
+        return 
+    
+    def predict(self, x):
+        for layer in self.layers.values():
+            x = layer.forward(x)
+            
+        return x
+
+    def loss(self, x, y):        
+        score = self.predict(x)
+        
+        return self.lastLayer.forward(score, y)
+
+    
+
+    def accuracy(self, x, y):
+        score = self.predict(x)
+        score = np.argmax(score, axis=1)
+        if y.ndim != 1 : y = np.argmax(y, axis=1)
+        accuracy = np.sum(score == y) / float(x.shape[0])
+
+        return accuracy
+
+        
+
+    def gradient(self, x, y):
+        # forward
+        self.loss(x, y)
+        # backward
+        dout = 1
+        dout = self.lastLayer.backward(dout)
+        layers = list(self.layers.values())
+        layers.reverse()
+
+        for layer in layers:
+            dout = layer.backward(dout)
+
+        grads = {}
+        #########################################################################################################
+        # 각 Weight 및 bias의 Gradient를 구하는 부분을 구현하라
+        # Implement the part obtaining Gradient of each Weight and bias
+        #########################################################################################################
+        #------------------------------------------WRITE YOUR CODE----------------------------------------------#
+
+        #-----------------------------------------END OF YOUR CODE----------------------------------------------#
+        #########################################################################################################
+
+        return grads
