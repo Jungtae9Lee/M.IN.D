@@ -2,8 +2,8 @@
 # https://blog.naver.com/mozzi_i/221192664548
 
 import sys, os
-os.chdir('/Users/bueno/Documents/Deeplearning/dataset') 
 sys.path.append(os.pardir)
+os.chdir('/Users/bueno/Documents/Deeplearning/dataset') 
 import numpy as np
 from dataset.mnist import load_mnist
 from PIL import Image

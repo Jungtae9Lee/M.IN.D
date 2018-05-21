@@ -80,7 +80,7 @@ y2 = np.cos(x)
 #이미지 읽어서 표시
 from matplotlib.image import imread
 
-img = imread('image/roun.png') #이미지 읽어오기
+img = imread('C:/Users/bueno/Documents/Deeplearning/01.DeepLearningFromScratch/image/roun.png') #이미지 읽어오기
 
 plt.imshow(img)
 plt.show()
