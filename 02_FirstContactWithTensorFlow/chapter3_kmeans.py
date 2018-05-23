@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 
 num_vectors = 1000
-num_clusters = 4
+num_clusters = 10
 num_steps = 100
 vector_values = []
 for i in range(num_vectors):
@@ -24,7 +24,6 @@ df = pd.DataFrame({"x": [v[0] for v in vector_values],
 sns.lmplot("x", "y", data=df, fit_reg=False, size=7)
 plt.show()
 
-#%%
 vectors = tf.constant(vector_values)
 centroids = tf.Variable(tf.slice(tf.random_shuffle(vectors), [0,0], [num_clusters,-1]))
 expanded_vectors = tf.expand_dims(vectors, 0)
@@ -66,7 +65,5 @@ for i in range(len(assignment_values)):
     data["y"].append(vector_values[i][1])
     data["cluster"].append(assignment_values[i])
 df = pd.DataFrame(data)
-sns.lmplot("x", "y", data=df, 
-           fit_reg=False, size=7, 
-           hue="cluster", legend=False)
+sns.lmplot("x", "y", data=df, fit_reg=False, size=7, hue="cluster", legend=False)
 plt.show()
