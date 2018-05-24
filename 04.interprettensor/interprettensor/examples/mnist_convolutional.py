@@ -38,7 +38,8 @@ import scipy.io as sio
 flags = tf.flags
 logging = tf.logging
 
-flags.DEFINE_integer("max_steps", 5001,'Number of steps to run trainer.')
+# flags.DEFINE_integer("max_steps", 5001,'Number of steps to run trainer.')
+flags.DEFINE_integer("max_steps", 101,'Number of steps to run trainer.')
 flags.DEFINE_integer("batch_size", 1000,'Number of steps to run trainer.')
 flags.DEFINE_integer("test_every", 500,'Number of steps to run trainer.')
 flags.DEFINE_float("learning_rate", 0.01,'Initial learning rate')
